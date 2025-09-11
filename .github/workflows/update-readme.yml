@@ -1,0 +1,27 @@
+name: Update profile README
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Update README
+        run: python scripts/update_readme.py
+      - name: Commit changes
+        run: |
+          if [[ -n "$(git status --porcelain)" ]]; then
+            git config user.name github-actions
+            git config user.email github-actions@github.com
+            git commit -am "chore: update profile"
+            git push
+          fi
