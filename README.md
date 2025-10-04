@@ -14,5 +14,5 @@
 
 ## 🔲 Contribution Snake
 <!-- 直接引用仓库根目录下生成的 snake.svg -->
-![contrib-snake](./snake.svg)
+![contrib-snake](https://github.com/printlndarling/printlndarling/blob/output/github-contribution-grid-snake.svg)
 
