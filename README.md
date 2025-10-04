@@ -13,5 +13,5 @@
 
 
 ## 🔲 Contribution Snake:
-![contrib-snake](https://github.com/printlndarling/printlndarling/blob/output/github-contribution-grid-snake.svg)
+![contrib-snake](https://github.com/printlndarling/printlndarling/blob/output/github-contribution-grid-snake-dark.svg)
 
