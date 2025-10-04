@@ -9,3 +9,10 @@
 ![](https://github-readme-stats.vercel.app/api?username=printlndarling&theme=radical&hide_border=false&include_all_commits=true&count_private=true)<br/>
 ![](https://github-readme-streak-stats.herokuapp.com/?user=printlndarling&theme=radical&hide_border=false)<br/>
 ![](https://github-readme-stats.vercel.app/api/top-langs/?username=printlndarling&theme=radical&hide_border=false&include_all_commits=true&count_private=true&layout=compact)
+
+
+
+## 🔲 Contribution Snake
+<!-- 直接引用仓库根目录下生成的 snake.svg -->
+![contrib-snake](./snake.svg)
+

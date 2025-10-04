@@ -1,0 +1,119 @@
+name: regenerate-snake-svg
+on:
+  schedule:
+    # 每天触发一次（UTC）。需要的话改成 cron: '0 * * * *'（每小时）或移除 schedule 只用 workflow_dispatch 手动触发。
+    - cron: '0 0 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Generate snake.svg
+        run: |
+          python - <<'PY'
+          # 生成一个带动画的 7x52 风格网格 + 移动贪吃蛇 SVG
+          import math
+          cols = 52
+          rows = 7
+          cell = 12     # 方块大小
+          gap = 4       # 方块间隙
+          step = cell + gap
+          width = cols * step + 2*10
+          height = rows * step + 2*10
+
+          # 生成按“周列优先、周日->周六行”顺序的路径（类似贡献图映射）
+          positions = []
+          for c in range(cols):
+            # 周日(0) -> 周六(6)
+            for r in range(rows):
+              x = 10 + c * step
+              y = 10 + r * step
+              positions.append((x,y))
+
+          # 让蛇沿着 positions 循环；为视觉效果只取一段循环的路径长度（可调）
+          total_steps = len(positions)
+          # snake length (格子数)
+          snake_len = 10
+          # 动画时长（秒）
+          duration = 12
+
+          # 把位置序列转换成 "x y; x y; ..." 字符串
+          values = ";".join(f"{int(x)},{int(y)}" for x,y in positions)
+          # 为每个段落设置延迟（尾巴有延迟）
+          begins = [f"{(i * (duration/ (snake_len*1.5))):.3f}s" for i in range(snake_len)]
+
+          # SVG 文本
+          svg = f'''<?xml version="1.0" encoding="utf-8"?>
+          <svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">
+            <style>
+              .bg {{ fill:#ebedf0; }}
+              .cell {{ rx:3; ry:3; fill:#ebedf0; }}
+              .on {{ fill:#1e6823; }}
+              .snake-head {{ fill:#39d353; rx:3; ry:3; }}
+              .snake-body {{ fill:#2ea043; rx:3; ry:3; opacity:0.9; }}
+              .food {{ fill:#e74c3c; rx:3; ry:3; }}
+            </style>
+
+            <!-- grid background -->
+            <g id="grid">
+          '''
+          # draw grid cells
+          for c in range(cols):
+            for r in range(rows):
+              x = 10 + c * step
+              y = 10 + r * step
+              svg += f'  <rect x="{x}" y="{y}" width="{cell}" height="{cell}" class="cell" />\n'
+
+          svg += "    </g>\n\n"
+          # 蛇 group：我们用 snake_len 个 rect，整组通过 animateTransform 移动（head 跟 body 循环位移并有偏移）
+          svg += '    <g id="snake">\n'
+          # Create snake segments (head first)
+          for i in range(snake_len):
+            cls = "snake-head" if i==0 else "snake-body"
+            # segments placed initially off-canvas; animateTransform 将它们移动到每一步
+            # 使用 animateTransform type=translate, values 是 "x,y; x2,y2; ..."（对应 positions）
+            svg += f'      <rect width="{cell}" height="{cell}" class="{cls}">\n'
+            svg += f'        <animateTransform attributeName="transform" type="translate"\n'
+            svg += f'          values="{values}" dur="{duration}s" repeatCount="indefinite" begin="{begins[i]}" />\n'
+            svg += '      </rect>\n'
+          svg += '    </g>\n\n'
+
+          # 画个食物在路径上某点（可选，供视觉效果）
+          food_idx = (total_steps // 3)
+          fx, fy = positions[food_idx]
+          svg += f'    <rect x="{fx}" y="{fy}" width="{cell}" height="{cell}" class="food">\n'
+          svg += '      <animate attributeName="opacity" values="0.2;1;0.2" dur="2s" repeatCount="indefinite"/>\n'
+          svg += '    </rect>\n'
+
+          svg += '</svg>\n'
+
+          with open('snake.svg', 'w', encoding='utf-8') as f:
+            f.write(svg)
+          print("snake.svg written. size:", len(svg))
+          PY
+
+      - name: Commit & push if changed
+        run: |
+          git add snake.svg
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "chore: regenerate snake.svg [ci skip]"
+            git push origin HEAD:main
+          fi
